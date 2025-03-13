@@ -92,7 +92,7 @@ func HandleNewAccount(w http.ResponseWriter, r *http.Request) *types.Error {
 		Name:     "foodgo-auth",
 		Value:    token,
 		Path:     "/",
-		Domain:   "localhost",
+		Domain:   "lalocura-go-production.up.railway.app",
 		Expires:  time.Now().Add(3600 * time.Hour),
 		Secure:   isProd,
 		HttpOnly: true,
