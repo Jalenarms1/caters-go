@@ -23,8 +23,6 @@ func init() {
 
 func main() {
 
-	fmt.Println("Hello there")
-
 	addr := os.Getenv("LISTEN_ADDR")
 
 	server := NewServer(addr)
