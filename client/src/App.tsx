@@ -9,7 +9,7 @@ function App() {
   const passwordRef = useRef(null)
 
   const submitLogin = async () => {
-    const resp = await fetch("http://localhost:2323/api/login", {
+    const resp = await fetch("https://lalocura-go-production.up.railway.app/api/login", {
       method: "POST",
       credentials: 'include',
       headers: {
