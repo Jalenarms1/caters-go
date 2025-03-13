@@ -24,6 +24,10 @@ function App() {
     const data = await resp.json()
 
     console.log(data);
+    if (data.token) {
+      console.log(data.token);
+      
+    }
     
   }
 
