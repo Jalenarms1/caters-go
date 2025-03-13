@@ -112,6 +112,7 @@ func HandleNewAccount(w http.ResponseWriter, r *http.Request) *types.Error {
 	fmt.Println(token)
 
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 
 	return nil
 }
