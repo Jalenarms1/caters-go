@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Jalenarms1/caters-go/internal/db"
+	"github.com/Jalenarms1/caters-go/internal/utils"
 	"github.com/joho/godotenv"
 )
 
@@ -19,6 +20,8 @@ func init() {
 	}
 
 	fmt.Println("DB Connected")
+
+	fmt.Println(utils.GenerateRandomUrlSlug())
 }
 
 func main() {

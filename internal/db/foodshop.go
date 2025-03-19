@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -9,13 +10,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Jalenarms1/caters-go/internal/utils"
+	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
 type FoodShop struct {
 	Id                  string             `json:"id"`
 	UserId              string             `json:"userId"`
-	User                Account            `json:"omitempty"`
 	AccountID           string             `json:"accountId,omitempty"`
 	UrlSlug             string             `json:"urlSlug"`
 	Label               string             `json:"label"`
@@ -32,13 +34,18 @@ type FoodShop struct {
 	Longitude           *float64           `json:"longitude"`
 	MaxDeliveryRadius   *float64           `json:"maxDeliveryRadius"`
 	DeliveryFee         *float64           `json:"deliveryFee"`
-	CreatedAt           time.Time          `json:"createdAt"`
+	CreatedAt           int64              `json:"createdAt"`
 	FoodShopItems       []FoodShopItem     `json:"foodShopItems,omitempty"`
 	FoodShopSchedule    []FoodShopSchedule `json:"foodShopSchedule,omitempty"`
 }
 
 func (f *FoodShop) Insert() error {
-	f.UrlSlug = strings.Replace(f.UrlSlug, " ", "-", -1)
+	// 	f.UrlSlug = fmt.Sprintf("%s-%s", f.Label, utils.GenerateRandomUrlSlug())
+	uid, _ := uuid.NewV4()
+	f.Id = uid.String()
+
+	f.UrlSlug = fmt.Sprintf("%s-%s", strings.ToLower(strings.Replace(f.Label, " ", "-", -1)), utils.GenerateRandomUrlSlug())
+	f.CreatedAt = time.Now().Unix()
 
 	if !GetIsSlugAvailable(f.UrlSlug) {
 		return errors.New("url slug already taken")
@@ -81,7 +88,7 @@ func GetIsSlugAvailable(urlSlug string) bool {
 	err := row.Scan(&id)
 	fmt.Println(err)
 	fmt.Println(err == pgx.ErrNoRows)
-	return err == pgx.ErrNoRows
+	return err == sql.ErrNoRows
 }
 
 func GetFoodShop(urlSlug string) (*FoodShop, error) {
@@ -180,7 +187,7 @@ func GetFoodShopByUserId(userId string) (*FoodShop, error) {
 		s.DeliveryFee,
 		s.CreatedAt 
 	FROM "User" u 
-	JOIN FoodShop s on s.AccountId = u.Id
+	JOIN FoodShop s on s.UserId = u.Id
 	WHERE u.Id = ?
 	`
 

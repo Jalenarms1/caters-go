@@ -1,0 +1,44 @@
+{{ define "content" }}
+<section class=" bg-orange-950 flex p-2 items-center justify-between">
+    <div class="flex items-center gap-2">
+        <img src="/public/icon-logo.png" alt="" class="w-12 h-12">
+        <p class="text-orange-300 font-semibold text-xl">Food&go</p>
+
+    </div>
+
+    <!-- <div>
+        <button></button>
+    </div> -->
+</section>
+
+<div class=" flex justify-center items-center p-8">
+    <div class="flex flex-col gap-5  items-center border rounded-sm w-[90vw] h-[75vh] p-2 bg-zinc-100">
+        <p class="text-2xl text-orange-950 font-semibold">Sign Up</p>
+        <form method="post" action="/api/signup/v2" class="w-full px-8 flex flex-col gap-5">
+            <div class="flex flex-col gap-1 w-full">
+                <p class="text-sm text-orange-950">Email</p>
+                <input type="text" name="email" placeholder="" class="bg-white rounded-md p-2" />     
+            </div>
+
+            <div class="flex flex-col gap-1 w-full">
+                <p class="text-sm text-orange-950">Password</p>
+                <input type="password" name="password" placeholder="" class="bg-white rounded-md p-2" />     
+            </div>
+
+            <div class="flex flex-col gap-1 w-full">
+                <p class="text-sm text-orange-950">Confirm Password</p>
+                <input type="password" name="confirmPassword" placeholder="" class="bg-white rounded-md p-2" />     
+                {{ if  .IsError }}
+                <p class="text-red-500 text-xs">Passwords do not match</p>
+                {{ end }}
+            </div>
+
+
+            <button type="submit" class="bg-orange-950 p-2 rounded-full text-white">Continue</button>
+        </form>
+        <a href="/pages/login" class=" active:text-blue-400">Already have an account?</a>
+
+    </div>
+
+</div>
+{{ end }}

@@ -1,11 +1,16 @@
 package db
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+	"sync"
+)
 
 type Account struct {
-	Id       string `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password,omitempty"`
+	Id       string    `json:"id"`
+	Email    string    `json:"email"`
+	Password string    `json:"password,omitempty"`
+	FoodShop *FoodShop `json:"foodShop,omitempty"`
 }
 
 func (a *Account) Insert() error {
@@ -21,12 +26,46 @@ func (a *Account) Insert() error {
 func GetAccountById(id string) (*Account, error) {
 
 	var acct Account
-	row := db.QueryRow(`select Id, Email from "User" where Id = ?`, id)
+	var foodShop *FoodShop
+	var wg sync.WaitGroup
+	var acctErr error
+	var foodShopErr error
 
-	err := row.Scan(&acct.Id, &acct.Email)
-	if err != nil {
-		return nil, err
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		row := db.QueryRow(`select Id, Email from "User" u where Id = ?`, id)
+
+		acctErr = row.Scan(&acct.Id, &acct.Email)
+		if acctErr != nil {
+			fmt.Println(acctErr)
+			// return nil, err
+		}
+
+	}()
+
+	go func() {
+		defer wg.Done()
+		foodShop, foodShopErr = GetFoodShopByUserId(id)
+		fmt.Println(foodShopErr)
+		if foodShopErr != nil && foodShopErr != sql.ErrNoRows {
+			fmt.Println(foodShopErr)
+			// return nil, err
+		}
+
+	}()
+
+	wg.Wait()
+
+	if acctErr != nil {
+		return nil, acctErr
 	}
+
+	if foodShopErr != nil && foodShopErr != sql.ErrNoRows {
+		return nil, foodShopErr
+	}
+	fmt.Println(foodShop)
+	acct.FoodShop = foodShop
 
 	return &acct, nil
 }

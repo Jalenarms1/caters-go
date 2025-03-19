@@ -1,9 +1,7 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
-	"time"
 )
 
 type FoodShopSchedule struct {
@@ -11,9 +9,9 @@ type FoodShopSchedule struct {
 	FoodShopID string `json:"foodShopId"`
 	OpenDt     string `json:"openDt"`
 	CloseDt    string `json:"closeDt"` // -- 20250101
-	OpenTm     string `json:"openTm"`  // -- 0930, 1330
-	CloseTm    string `json:"closeTm"` //
-	CreatedAt  string `json:"createdAt"`
+	OpenTm     int64  `json:"openTm"`  // -- 09:30, 13:30
+	CloseTm    int64  `json:"closeTm"` //
+	CreatedAt  int64  `json:"createdAt"`
 }
 
 func (fi *FoodShopSchedule) Insert() error {
@@ -43,41 +41,40 @@ func GetFoodShopSchedule(foodShopId string) (*[]FoodShopSchedule, error) {
 		CreatedAt
 	FROM FoodShopSchedule
 	WHERE FoodShopId = ?
+	ORDER BY OpenDt, OpenTm
 	`
 
 	rows, err := db.Query(query, foodShopId)
 	var items []FoodShopSchedule
 	for rows.Next() {
 		var fi FoodShopSchedule
-		var openDate, closeDate, createdAt interface{}
-		var openTime, closeTime sql.NullString
 		err := rows.Scan(
 			&fi.Id,
 			&fi.FoodShopID,
-			&openDate,
-			&closeDate,
-			&openTime,
-			&closeTime,
-			&createdAt,
+			&fi.OpenDt,
+			&fi.CloseDt,
+			&fi.OpenTm,
+			&fi.CloseTm,
+			&fi.CreatedAt,
 		)
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(openDate.(time.Time).Format("2006-01-02"))
-		fmt.Println(openDate, closeDate, createdAt)
-		fmt.Println(openTime.String[:5], closeTime.String[:5])
 
-		fi.OpenDt = openDate.(time.Time).Format("2006-01-02")
-		fi.CloseDt = closeDate.(time.Time).Format("2006-01-02")
-		fi.CreatedAt = createdAt.(time.Time).Format("2006-01-02")
-		fi.OpenTm = openTime.String[:5]
-		fi.CloseTm = closeTime.String[:5]
-
-		fmt.Println(fi)
+		fmt.Println("foodschedulde", fi)
 
 		items = append(items, fi)
 
 	}
-
+	// fmt.Println("items", items)
 	return &items, err
+}
+
+func DeleteScheduleSlot(id string) error {
+	query := `
+	DELETE FROM FoodShopSchedule WHERE Id = ?
+	`
+	_, err := db.Exec(query, id)
+
+	return err
 }

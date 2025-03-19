@@ -23,4 +23,8 @@ type Error struct {
 	ReturnCode int
 }
 
+type FormError struct {
+	IsError bool
+}
+
 type ErrHandlerFunc func(w http.ResponseWriter, r *http.Request) *Error

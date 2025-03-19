@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
+	"text/template"
 	"time"
 
 	"github.com/Jalenarms1/caters-go/internal/db"
@@ -15,6 +18,74 @@ import (
 	"github.com/gofrs/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func HandleLoginPage(w http.ResponseWriter, r *http.Request) *types.Error {
+
+	t, err := template.ParseGlob("templates/login/*.html")
+	if err != nil {
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
+	}
+
+	t.ExecuteTemplate(w, "layout.html", nil)
+
+	return nil
+}
+
+func HandleSignupPage(w http.ResponseWriter, r *http.Request) *types.Error {
+
+	t, err := template.ParseGlob("templates/signup/*.html")
+	if err != nil {
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
+	}
+
+	var isError bool
+	ctxErr := r.Context().Value("IsError")
+	isError = ctxErr != nil
+
+	fmt.Println(isError)
+
+	t.ExecuteTemplate(w, "layout.html", &types.FormError{IsError: isError})
+
+	return nil
+}
+
+func HandleSignupV2(w http.ResponseWriter, r *http.Request) *types.Error {
+
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	confirmedPassword := r.FormValue("confirmPassword")
+
+	fmt.Println(email)
+	fmt.Println(password)
+	fmt.Println(confirmedPassword)
+
+	if !strings.EqualFold(password, confirmedPassword) {
+
+		// t, err := template.ParseGlob("templates/signup/*.html")
+		// if err != nil {
+		// 	return &types.Error{
+		// 		Err:        err,
+		// 		ReturnCode: http.StatusInternalServerError,
+		// 	}
+		// }
+
+		http.Redirect(w, r.WithContext(context.WithValue(context.Background(), "IsError", true)), "/pages/signup", http.StatusPermanentRedirect)
+
+		// t.ExecuteTemplate(w, "layout.html", &types.FormError{IsError: true})
+
+		return nil
+	}
+
+	http.Redirect(w, r, "/pages/signup", http.StatusPermanentRedirect)
+
+	return nil
+}
 
 func HandleNewAccount(w http.ResponseWriter, r *http.Request) *types.Error {
 
@@ -49,7 +120,7 @@ func HandleNewAccount(w http.ResponseWriter, r *http.Request) *types.Error {
 	if existingAcct != nil {
 		return &types.Error{
 			Err:        errors.New("account with this email already exists"),
-			ReturnCode: http.StatusNotAcceptable,
+			ReturnCode: http.StatusBadRequest,
 		}
 	}
 
@@ -117,10 +188,24 @@ func HandleNewAccount(w http.ResponseWriter, r *http.Request) *types.Error {
 	return nil
 }
 
-func HandleLogin(w http.ResponseWriter, r *http.Request) error {
+func HandleLoginV2(w http.ResponseWriter, r *http.Request) *types.Error {
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	fmt.Println(email, password)
+
+	http.Redirect(w, r, "/pages/login", http.StatusPermanentRedirect)
+
+	return nil
+}
+
+func HandleLogin(w http.ResponseWriter, r *http.Request) *types.Error {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return err
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
 	}
 	defer r.Body.Close()
 
@@ -128,23 +213,37 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) error {
 
 	err = json.Unmarshal(body, &acctInfo)
 	if err != nil {
-		return err
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
 	}
 
 	existingUser, _ := db.GetUserWPasswordByEmail(acctInfo.Email)
 	if existingUser == nil {
-		return errors.New("existing user not found with the email provided")
+		return &types.Error{
+			Err:        errors.New("existing user not found with the email provided"),
+			ReturnCode: http.StatusNotFound,
+		}
+
 	}
 	fmt.Println(acctInfo.Password)
 	isPasswordMatch := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(acctInfo.Password))
 
 	if isPasswordMatch != nil {
-		return errors.New("invalid credentials")
+		return &types.Error{
+			Err:        errors.New("invalid credentials"),
+			ReturnCode: http.StatusBadRequest,
+		}
+
 	}
 
 	token, err := utils.GenerateJWT(existingUser.Id)
 	if err != nil {
-		return err
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
 	}
 
 	fmt.Println(token)
@@ -163,19 +262,29 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) error {
 
 	http.SetCookie(w, cookie)
 
-	return json.NewEncoder(w).Encode((map[string]string{"token": token}))
+	_ = json.NewEncoder(w).Encode((map[string]string{"token": token}))
+
+	return nil
 }
 
-func HandleGetMe(w http.ResponseWriter, r *http.Request) error {
+func HandleGetMe(w http.ResponseWriter, r *http.Request) *types.Error {
 	fmt.Println("getme")
 	uid := r.Context().Value(types.AuthKey)
 	if uid == nil {
-		return errors.New("no authentication")
+		return &types.Error{
+			Err:        errors.New("no authentication"),
+			ReturnCode: http.StatusBadRequest,
+		}
+
 	}
 
+	fmt.Println(uid)
 	acct, err := db.GetAccountById(uid.(string))
 	if err != nil {
-		return err
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
 	}
 
 	fmt.Println(acct)

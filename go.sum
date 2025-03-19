@@ -1,5 +1,3 @@
-github.com/Jalenarms1/foodgo v0.0.0-20250303061907-41bad0dbc603 h1:lmWtli5VCa/Ce43nNmrrp5Jtj7vy23kUTboW3DsSkDw=
-github.com/Jalenarms1/foodgo v0.0.0-20250303061907-41bad0dbc603/go.mod h1:QTBdBv+qwj4cMhypzw5Bh4/Mj+/FOZoy22lqc5MFWKc=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/coder/websocket v1.8.12 h1:5bUXkEPPIbewrnkU8LTCLVaxi4N4J8ahufH2vlo4NAo=

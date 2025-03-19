@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 
 	"github.com/Jalenarms1/caters-go/internal/db"
 	"github.com/Jalenarms1/caters-go/internal/types"
+	"github.com/Jalenarms1/caters-go/internal/utils"
+	"github.com/gofrs/uuid"
 )
 
 func HandlerGetFoodShopCategories(w http.ResponseWriter, r *http.Request) error {
@@ -26,25 +29,50 @@ func HandlerGetFoodShopCategories(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func HandleNewFoodShop(w http.ResponseWriter, r *http.Request) error {
+func HandleNewFoodShop(w http.ResponseWriter, r *http.Request) *types.Error {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return err
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
 	}
 	defer r.Body.Close()
 
 	var foodShop db.FoodShop
 	err = json.Unmarshal(body, &foodShop)
 	if err != nil {
-		return err
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusBadRequest,
+		}
 	}
 
 	fmt.Println(foodShop)
 
+	foodShop.UserId = r.Context().Value(types.AuthKey).(string)
+
+	uid, _ := uuid.NewV4()
+	imagePath := path.Join("public/images", fmt.Sprintf("%s.png", uid))
+
+	err = utils.SaveImage(imagePath, foodShop.Logo)
+	if err != nil {
+		return &types.Error{
+			Err:        err,
+			ReturnCode: http.StatusInternalServerError,
+		}
+	}
+
+	foodShop.Logo = imagePath
+
 	err = foodShop.Insert()
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return &types.Error{
+			Err:        errors.New("error occurred processing order"),
+			ReturnCode: http.StatusInternalServerError,
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
